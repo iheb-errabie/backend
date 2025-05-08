@@ -213,3 +213,52 @@ exports.confirmOrder = async (req, res) => {
 };
 
 
+// Service-style function for the registration route
+exports.createUser = async ({ username, email, password, role }) => {
+  // Check if user already exists
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    const err = new Error("User already exists!");
+    err.statusCode = 400;
+    throw err;
+  }
+  // Create and save the new user
+  const user = new User({ username, email, password, role });
+  await user.save();
+  return user;
+};
+// Add to wishlist
+exports.addToWishlist = async (req, res) => {
+  const userId = req.user.id;
+  const { productId } = req.body;
+  const product = await Product.findById(productId);
+  if (!product) return res.status(404).json({ message: "Product not found" });
+
+  const user = await User.findById(userId);
+  if (user.wishlist.includes(productId))
+    return res.status(400).json({ message: "Product already in wishlist" });
+
+  user.wishlist.push(productId);
+  await user.save();
+  res.status(200).json({ message: "Added to wishlist", wishlist: user.wishlist });
+};
+
+// Remove from wishlist
+exports.removeFromWishlist = async (req, res) => {
+  const userId = req.user.id;
+  const { productId } = req.body;
+
+  const user = await User.findById(userId);
+  user.wishlist = user.wishlist.filter(
+    (id) => id.toString() !== productId.toString()
+  );
+  await user.save();
+  res.status(200).json({ message: "Removed from wishlist", wishlist: user.wishlist });
+};
+
+// Get wishlist
+exports.getWishlist = async (req, res) => {
+  const userId = req.user.id;
+  const user = await User.findById(userId).populate("wishlist");
+  res.status(200).json(user.wishlist);
+};

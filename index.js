@@ -11,6 +11,8 @@ const app = express();
 const userRoutes = require("./routes/userRoute.js");
 const productRoutes = require("./routes/productRoutes.js");
 const advertisementRoutes = require("./routes/advertisementRoutes.js");
+const cartRoutes = require("./routes/cartRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 // MongoDB URI
 const uri = process.env.MONGO_URI || "mongodb+srv://iheberrabie1:iheb123@vendor-db.ucxn3.mongodb.net/?retryWrites=true&w=majority&appName=Vendor-db";
@@ -40,3 +42,5 @@ mongoose.connect(uri)
   .catch(err => console.error("Connection Error:", err));
 
 // No need for app.get('/') here!
+app.use("/users/cart", cartRoutes);
+app.use("/admin", adminRoutes);

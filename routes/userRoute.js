@@ -86,5 +86,7 @@ router.get('/cart', verifyToken, userController.viewCart);
 
 // Add route for confirming orders
 router.post('/orders', verifyToken, userController.confirmOrder);
+// wishlist routes
+
 
 module.exports = router;
