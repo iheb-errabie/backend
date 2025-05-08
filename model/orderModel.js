@@ -19,6 +19,8 @@ const orderSchema = new mongoose.Schema({
       min: 1 
     }
   }],
+  status: { type: String, default: "pending" },
+
   // you can add other fields like totalPrice, status, etc.
 }, { timestamps: true });
 

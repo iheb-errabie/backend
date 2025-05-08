@@ -5,6 +5,7 @@ const bcrypt        = require("bcryptjs");
 const jwt           = require("jsonwebtoken");
 const verifyToken   = require("../middleware/verifyToken");    // <<— protect routes
 const userController = require("../controller/userController");
+const auth = require("../middleware/auth"); // Should check for admin role
 
 // --- Public routes -----------------------------------------
 
@@ -83,6 +84,15 @@ router.get(
 router.post('/cart', verifyToken, userController.addToCart);
 router.delete('/cart/:productId', verifyToken, userController.removeFromCart);
 router.get('/cart', verifyToken, userController.viewCart);
+
+// ADD to wishlist
+router.post('/wishlist/add', auth, userController.addToWishlist);
+
+// REMOVE from wishlist
+router.post('/wishlist/remove', auth, userController.removeFromWishlist);
+
+// GET wishlist
+router.get('/wishlist', auth, userController.getWishlist);
 
 // Add route for confirming orders
 router.post('/orders', verifyToken, userController.confirmOrder);

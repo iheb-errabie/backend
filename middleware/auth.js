@@ -9,13 +9,13 @@ module.exports = async function (req, res, next) {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "secretkeyappearshere");
     // Use decoded.userId or decoded.id, depending on your token payload
-    req.user = await User.findById(decoded.userId || decoded.id);
-    if (!req.user) return res.status(401).json({ message: "User not found" });
+    req.user = {
+        id: decoded.userId,          // <-- THIS LINE
+        email: decoded.email,
+        role: decoded.role
+      };
+      next();
 
-    // Optionally, enforce admin check here
-    // if (req.user.role !== "admin") return res.status(403).json({ message: "Admin only" });
-
-    next();
   } catch (err) {
     res.status(401).json({ message: "Token is not valid", error: err.message });
   }
