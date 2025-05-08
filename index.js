@@ -42,5 +42,5 @@ mongoose.connect(uri)
   .catch(err => console.error("Connection Error:", err));
 
 // No need for app.get('/') here!
-app.use("/users/cart", cartRoutes);
-app.use("/admin", adminRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/admin", require("./routes/adminRoutes"));

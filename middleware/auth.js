@@ -7,7 +7,7 @@ module.exports = async function (req, res, next) {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ message: "No token" });
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your_jwt_secret_here");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "secretkeyappearshere");
     // Use decoded.userId or decoded.id, depending on your token payload
     req.user = await User.findById(decoded.userId || decoded.id);
     if (!req.user) return res.status(401).json({ message: "User not found" });

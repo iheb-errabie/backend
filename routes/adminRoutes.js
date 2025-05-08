@@ -7,8 +7,6 @@ router.get("/vendors", auth, adminController.getVendors);
 router.get("/clients", auth, adminController.getClients);
 router.post("/vendors/:id/approve", auth, adminController.approveVendor);
 router.delete("/users/:id", auth, adminController.deleteUser);
-router.get("/test", auth, (req, res) => {
-  res.status(200).json({ message: "Admin route is working" });
-});
+router.get("/test", (req, res) => res.json({ status: "OK" }));
 
 module.exports = router;

@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
   username: String,
   email: String,
   password: String,
-  role: { type: String, enum: ["client", "vendor"], default: "client" },
+  role: { type: String, enum: ["client", "vendor", "admin"], default: "client" },
   cart: [
     {
       product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },

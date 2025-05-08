@@ -11,11 +11,14 @@ exports.getVendors = async (req, res) => {
   };
 // Get all clients
 exports.getClients = async (req, res) => {
-  const clients = await User.find({ role: "client" });
-  res.json(clients);
-};
-
-// Approve vendor (if you have a pending/approved system)
+    try {
+      const clients = await User.find({ role: "client" });
+      res.json(clients);
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  };
+  // Approve vendor (if you have a pending/approved system)
 exports.approveVendor = async (req, res) => {
   const { id } = req.params;
   const vendor = await User.findByIdAndUpdate(id, { approved: true }, { new: true });
