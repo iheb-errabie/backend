@@ -1,7 +1,9 @@
 const express = require("express");
 const router = express.Router();
+require('dotenv').config(); // Add this line at the top if not already in your app entry!
+
 const Stripe = require("stripe");
-const stripe = Stripe("sk_test_51RNhNMFVlBpBipIFIMGiOILOy1BPd2yM4l5l2GUZh5PaMh1tPZoltehde8fgpG3McJRrYxfLU2Rglpf1IRicGR4l00SM4Z0h0z"); // Replace with your secret key
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY); // Use env variable
 
 router.post("/create-checkout-session", async (req, res) => {
   const { cart } = req.body;
@@ -15,7 +17,7 @@ router.post("/create-checkout-session", async (req, res) => {
             name: item.product.name,
             images: item.product.images && item.product.images.length > 0
               ? [item.product.images[0]]
-              : [], // Use the product's main image if available
+              : [],
           },
           unit_amount: Math.round(item.product.price * 100),
         },
