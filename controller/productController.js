@@ -35,10 +35,12 @@ exports.createProduct = async (req, res) => {
 
     const data = {
       ...req.body,
-      owner: req.user.userId || req.user._id,  // depending on your JWT payload
+      owner: req.user.userId || req.user._id,
     };
 
-    console.log(data, " Product data ");
+    // Debug: Log files and body
+    console.log("BODY:", req.body);
+    console.log("FILES:", req.files);
 
     if (req.files && req.files['images']) {
       data.images = req.files['images'].map(file => file.path);
@@ -48,14 +50,16 @@ exports.createProduct = async (req, res) => {
       data.video = req.files['video'][0].path;
     }
 
+    console.log("DATA TO SAVE:", data);
+
     const product = new Product(data);
     await product.save();
     return res.status(201).json(product);
   } catch (err) {
+    console.error("CREATE PRODUCT ERROR:", err); // <--- Add this line!
     return res.status(500).json({ error: 'Failed to create product', details: err.message });
   }
 };
-
 // UPDATE an existing product by ID
 exports.updateProduct = async (req, res) => {
   try {

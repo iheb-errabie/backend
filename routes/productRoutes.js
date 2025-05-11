@@ -1,7 +1,7 @@
 const express           = require('express');
 const router            = express.Router();
 const verifyToken       = require('../middleware/verifyToken');
-const upload            = require('../middleware/upload');
+const parser = require('../middleware/cloudinaryUpload'); // NOT local disk upload!
 const productController = require('../controller/productController');
 
 // 1) PROTECTED READ routes
@@ -22,9 +22,9 @@ router.get(
 router.post(
   '/',
   verifyToken,                  // must be logged in
-  upload.fields([
-    { name: 'images', maxCount: 5 }, // Ensure the field name matches the form-data key
-    { name: 'video',  maxCount: 1 }  // Ensure the field name matches the form-data key
+  parser.fields([
+    { name: 'images', maxCount: 5 },
+    { name: 'video', maxCount: 1 }
   ]),
   productController.createProduct
 );
@@ -32,9 +32,9 @@ router.post(
 router.put(
   '/:id',
   verifyToken,                  // must be logged in
-  upload.fields([
+  parser.fields([
     { name: 'images', maxCount: 5 },
-    { name: 'video',  maxCount: 1 }
+    { name: 'video', maxCount: 1 }
   ]),
   productController.updateProduct
 );

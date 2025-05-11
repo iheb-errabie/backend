@@ -44,3 +44,7 @@ mongoose.connect(uri)
 // No need for app.get('/') here!
 app.use("/api/cart", cartRoutes);
 app.use("/api/admin", require("./routes/adminRoutes"));
+// payment routes
+
+const stripeRoutes = require('./routes/stripe');
+app.use('/api/stripe', stripeRoutes);
