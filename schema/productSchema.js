@@ -24,11 +24,14 @@ const productSchema = new mongoose.Schema({
   video: {
     type: String,
   }, // ← missing comma was here
-  owner: { 
+  vendor: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User', 
     required: true 
-  }
+  },
+   totalRatings: { type: Number, default: 0 },
+  reviewCount: { type: Number, default: 0 },
+  averageRating: { type: Number, default: 0 }
 }, { timestamps: true }); 
 
 
@@ -58,5 +61,7 @@ productSchema.add({
     default: 0
   }
 });
+
+
 
 module.exports = productSchema;  // Correctly exporting the schema

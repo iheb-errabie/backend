@@ -10,6 +10,7 @@ const auth = require("../middleware/auth"); // Should check for admin role
 // --- Public routes -----------------------------------------
 
 // Register User (Signup)
+// routes/userRoute.js
 router.post("/register", async (req, res) => {
   try {
     const { username, email, password, role } = req.body;
@@ -17,25 +18,24 @@ router.post("/register", async (req, res) => {
     if (existingUser) {
       return res.status(400).json({ message: "User already exists!" });
     }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await userController.createUser({ username, email, password: hashedPassword, role });
+    // DO NOT hash here!
+    const newUser = await userController.createUser({ username, email, password, role });
     res.status(201).json({ message: "User registered successfully!", userId: newUser._id });
   } catch (error) {
     res.status(500).json({ message: "Error! Something went wrong.", error: error.message });
   }
 });
-
 // User Login
 router.post("/login", async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const existingUser = await userController.findByEmail(email);
+    console.log("existingUser:", existingUser); // <-- See what is returned
     if (!existingUser) return res.status(401).json({ message: "Invalid credentials!" });
 
     const isPasswordValid = await bcrypt.compare(password, existingUser.password);
+    console.log("isPasswordValid:", isPasswordValid); // <-- See what is returned
     if (!isPasswordValid) return res.status(401).json({ message: "Invalid credentials!" });
-
     const token = jwt.sign(
       { userId: existingUser._id, email: existingUser.email, role: existingUser.role },
       process.env.JWT_SECRET || "secretkeyappearshere",
@@ -55,6 +55,11 @@ router.post("/login", async (req, res, next) => {
     res.status(500).json({ message: "Error! Something went wrong.", error: error.message });
   }
 });
+
+// forget password
+router.post('/forgot-password', userController.forgotPasswordController);
+router.post('/reset-password', userController.resetPassword);
+
 
 // --- Protected routes (require valid JWT) ----------------
 router.use(verifyToken);
@@ -94,9 +99,19 @@ router.post('/wishlist/remove', auth, userController.removeFromWishlist);
 // GET wishlist
 router.get('/wishlist', auth, userController.getWishlist);
 
-// Add route for confirming orders
-router.post('/orders', verifyToken, userController.confirmOrder);
-// wishlist routes
+// routes/userRoute.js
+router.get('/orders', verifyToken, userController.getOrdersForUser);
+router.post('/orders/confirm', verifyToken, userController.confirmOrder);
+
+router.get('/stats/vendor', userController.getVendorStats);
+
+// User self-service profile
+router.get("/users/me", verifyToken, userController.getMe);
+router.put("/users/me", verifyToken, userController.updateMe);
+
+
+// get user by id
+router.get("/users/:id", verifyToken, userController.getUserById);
 
 
 module.exports = router;

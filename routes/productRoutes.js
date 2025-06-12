@@ -1,60 +1,46 @@
-const express           = require('express');
-const router            = express.Router();
-const verifyToken       = require('../middleware/verifyToken');
-const parser = require('../middleware/cloudinaryUpload'); // NOT local disk upload!
+const express = require('express');
+const router = express.Router();
+const verifyToken = require('../middleware/verifyToken');
+const parser = require('../middleware/cloudinaryUpload');
 const productController = require('../controller/productController');
 
-// 1) PROTECTED READ routes
-router.get(
-  '/',
-  verifyToken,                  // must be logged in
-  productController.getProducts
-);
-
-
-router.get(
-  '/:id',
-  verifyToken,                  // must be logged in
-  productController.getProductById
-);
+// 1) PUBLIC READ routes
+router.get('/', productController.getProducts);
+router.get('/vistorproducts', productController.getProducts);
+router.get('/:id', productController.getProductById);
 
 // 2) PROTECTED WRITE routes (with file uploads)
 router.post(
   '/',
-  verifyToken,                  // must be logged in
+  verifyToken,
   parser.fields([
     { name: 'images', maxCount: 5 },
     { name: 'video', maxCount: 1 }
   ]),
   productController.createProduct
 );
-
 router.put(
   '/:id',
-  verifyToken,                  // must be logged in
+  verifyToken,
   parser.fields([
     { name: 'images', maxCount: 5 },
     { name: 'video', maxCount: 1 }
   ]),
   productController.updateProduct
 );
-
-// 3) PROTECTED DELETE route
 router.delete(
   '/:id',
-  verifyToken,                  // must be logged in
+  verifyToken,
   productController.deleteProduct
 );
-// ← New route for vendor’s products
 router.get(
   '/vendor/:vendorId',
   verifyToken,
   productController.getProductsByVendor
 );
-
 router.get(
   '/category/:category',
-  verifyToken,              
+  verifyToken,
   (req, res, next) => {
     if (!req.params.category) {
       return res.status(400).send('Category parameter is required');
@@ -63,13 +49,22 @@ router.get(
   },
   productController.getProductsByCategory
 );
-
-// Add route for adding reviews to a product
 router.post(
   '/:id/reviews',
-  verifyToken, // must be logged in
+  verifyToken,
   productController.addReview
 );
 
-module.exports = router;
+router.get(
+  '/:id/reviews',
+  verifyToken,
+  productController.getProductReviews
+);
 
+router.put(
+  '/:id/reviews/:reviewId',
+  verifyToken,
+  productController.updateReview
+);
+
+module.exports = router;

@@ -2,6 +2,7 @@
 const Product = require('../model/productModel');
 const fs = require('fs');
 const path = require('path');
+const mongoose = require('mongoose');
 
 // GET all products
 exports.getProducts = async (req, res) => {
@@ -12,6 +13,7 @@ exports.getProducts = async (req, res) => {
     return res.status(500).json({ error: 'Failed to fetch products', details: err.message });
   }
 };
+
 
 // GET a single product by ID
 exports.getProductById = async (req, res) => {
@@ -35,7 +37,7 @@ exports.createProduct = async (req, res) => {
 
     const data = {
       ...req.body,
-      owner: req.user.userId || req.user._id,
+      vendor: req.user.userId || req.user._id,
     };
 
     // Debug: Log files and body
@@ -132,7 +134,7 @@ exports.getProductsByVendor = async (req, res) => {
       return res.status(403).json({ message: 'Vendors can only fetch their own products' });
     }
 
-    const products = await Product.find({ owner: vendorId });
+    const products = await Product.find({ vendor: vendorId });
     return res.status(200).json(products);
   } catch (err) {
     return res.status(500).json({ error: 'Failed to fetch vendor products', details: err.message });
@@ -152,32 +154,137 @@ exports.getProductsByCategory = async (req, res) => {
   }
 };
 
-// Add a review to a product
+
 exports.addReview = async (req, res) => {
   try {
     const { rating, comment } = req.body;
-    const product = await Product.findById(req.params.id);
+    const productId = req.params.id;
 
+    // Check if product exists
+    const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
     const review = {
       user: req.user.userId,
-      rating,
+      rating: Number(rating),
       comment
     };
 
-    product.reviews.push(review);
+    // Update product and calculate average atomically
+    const updatedProduct = await Product.findByIdAndUpdate(
+      productId,
+      {
+        $push: { reviews: review },
+        $inc: { totalRatings: review.rating, reviewCount: 1 }
+      },
+      { new: true, runValidators: true }
+    );
 
-    // Recalculate average rating
-    product.averageRating =
-      product.reviews.reduce((sum, review) => sum + review.rating, 0) /
-      product.reviews.length;
+    // Calculate average rating as number
+    const averageRating = 
+      updatedProduct.totalRatings / updatedProduct.reviewCount;
+    const roundedAverage = Math.round(averageRating * 10) / 10;
 
-    await product.save();
-    res.status(201).json({ message: 'Review added successfully', product });
+    await Product.findByIdAndUpdate(productId, {
+      $set: { averageRating: roundedAverage }
+    });
+
+    res.status(201).json({
+      message: 'Review added successfully',
+      product: await Product.findById(productId)
+    });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to add review', details: err.message });
+    res.status(500).json({
+      error: 'Failed to add review',
+      details: err.message
+    });
+  }
+};
+
+exports.updateReview = async (req, res) => {
+  try {
+    const { rating, comment } = req.body;
+    const { id: productId, reviewId } = req.params;
+    const userId = req.user.userId;
+
+    // Find product and review
+    const product = await Product.findById(productId);
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+    
+    const review = product.reviews.id(reviewId);
+    if (!review) return res.status(404).json({ message: 'Review not found' });
+    if (review.user.toString() !== userId) return res.status(403).json({ message: 'Unauthorized' });
+
+    // Calculate rating difference
+    const ratingDiff = Number(rating) - review.rating;
+
+    // Update specific fields instead of whole document
+    const updateResult = await Product.findOneAndUpdate(
+      { _id: productId, 'reviews._id': reviewId },
+      { 
+        $set: {
+          'reviews.$.rating': Number(rating),
+          'reviews.$.comment': comment
+        },
+        $inc: { totalRatings: ratingDiff }
+      },
+      { new: true, runValidators: true }
+    );
+
+    // Calculate new average
+    const newTotal = updateResult.totalRatings;
+    const reviewCount = updateResult.reviewCount;
+    const averageRating = reviewCount > 0 ? newTotal / reviewCount : 0;
+    const roundedAverage = Math.round(averageRating * 10) / 10;
+
+    // Update average rating
+    await Product.findByIdAndUpdate(productId, {
+      $set: { averageRating: roundedAverage }
+    });
+
+    res.status(200).json({
+      message: 'Review updated successfully',
+      product: await Product.findById(productId)
+    });
+  } catch (err) {
+    res.status(500).json({
+      error: 'Failed to update review',
+      details: err.message
+    });
+  }
+};
+
+// GET product reviews by product ID
+exports.getProductReviews = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate productId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'Invalid product ID' });
+    }
+
+    // Find product and populate reviews with user data
+    const product = await Product.findById(id)
+      .select('reviews')
+      .populate('reviews.user', 'name email'); // Populate user details for each review
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    // Return reviews
+    return res.status(200).json({
+      reviews: product.reviews,
+      totalReviews: product.reviews.length,
+      averageRating: product.averageRating
+    });
+  } catch (err) {
+    return res.status(500).json({ 
+      error: 'Failed to fetch product reviews', 
+      details: err.message 
+    });
   }
 };

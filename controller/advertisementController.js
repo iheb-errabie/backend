@@ -16,8 +16,8 @@ exports.getAdvertisements = async (req, res) => {
       filter.status = 'active';
     }
     const ads = await Advertisement.find(filter)
-      .populate('product', 'name price images')
-      .populate('vendor', 'username email');
+      .populate('product')
+      .populate('vendor');
     return res.status(200).json(ads);
   } catch (err) {
     return res.status(500).json({ message: 'Failed to fetch ads', error: err.message });
@@ -54,10 +54,10 @@ exports.createAdvertisement = async (req, res) => {
     }
 
     // Ensure product belongs to this vendor (unless admin)
-    const product = await Product.findById(req.body.productId).populate({ path: 'owner', select: '_id' });
+    const product = await Product.findById(req.body.productId).populate({ path: 'vendor', select: '_id' });
     if (!product) return res.status(400).json({ message: 'Invalid product ID' });
-    if (req.user.role === 'vendor' && product.owner._id.toString() !== req.user.userId.toString()) {
-      console.log(product.owner._id.toString(), req.user.userId.toString());
+    if (req.user.role === 'vendor' && product.vendor._id.toString() !== req.user.userId.toString()) {
+      console.log(product.vendor._id.toString(), req.user.userId.toString());
       return res.status(403).json({ message: 'Cannot advertise a product you do not own' });
     }
 
